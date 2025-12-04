@@ -1,0 +1,88 @@
+name: 'Upload AXF to uLogger'
+description: 'Upload AXF firmware files to uLogger platform via MQTT and S3'
+author: 'uLogger AI'
+
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  customer_id:
+    description: 'Customer identifier for MQTT topic'
+    required: false
+  application_id:
+    description: 'Application identifier'
+    required: false
+  device_type:
+    description: 'Device type'
+    required: false
+  version:
+    description: 'Software version number'
+    required: true
+  git_hash:
+    description: 'Git hash for the firmware'
+    required: true
+  branch:
+    description: 'Branch name to include in upload request'
+    required: true
+  file:
+    description: 'Path to the AXF file to upload'
+    required: true
+  cert_data:
+    description: 'Certificate data (PEM format) for MQTT authentication'
+    required: false
+  key_data:
+    description: 'Private key data (PEM format) for MQTT authentication'
+    required: false
+  cert_path:
+    description: 'Path to certificate file (alternative to cert_data)'
+    required: false
+    default: 'certificate.pem.crt'
+  key_path:
+    description: 'Path to private key file (alternative to key_data)'
+    required: false
+    default: 'private.pem.key'
+  timeout:
+    description: 'Timeout in seconds to wait for MQTT response'
+    required: false
+    default: '30'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Cache Python dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-ulogger-axf-upload
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r "${{ github.action_path }}/requirements.txt"
+        
+    - name: Upload AXF file
+      shell: bash
+      env:
+        ULOGGER_CUSTOMER_ID: ${{ inputs.customer_id }}
+        ULOGGER_APPLICATION_ID: ${{ inputs.application_id }}
+        ULOGGER_DEVICE_TYPE: ${{ inputs.device_type }}
+        ULOGGER_CERT_DATA: ${{ inputs.cert_data }}
+        ULOGGER_KEY_DATA: ${{ inputs.key_data }}
+      run: |
+        python "${{ github.action_path }}/postbuild.py" \
+          --version "${{ inputs.version }}" \
+          --git_hash "${{ inputs.git_hash }}" \
+          --branch "${{ inputs.branch }}" \
+          --file "${{ inputs.file }}" \
+          --cert_path "${{ inputs.cert_path }}" \
+          --key_path "${{ inputs.key_path }}" \
+          --timeout "${{ inputs.timeout }}"
