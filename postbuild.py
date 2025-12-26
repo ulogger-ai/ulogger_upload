@@ -70,7 +70,7 @@ class AxfUploadClient:
         """Set up MQTT client with certificate-based authentication."""
         try:
             # Create MQTT client
-            self.mqtt_client = mqtt.Client(client_id=f"cust-{self.customer_id}")
+            self.mqtt_client = mqtt.Client(client_id=f"cust-{self.customer_id}-uploader-{random.randint(0, 4294967295)}")
             
             # Set up SSL/TLS with certificates for ulogger broker
             self.mqtt_client.tls_set(
