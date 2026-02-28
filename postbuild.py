@@ -40,12 +40,14 @@ class AxfUploadClient:
     def __init__(self, customer_id: str, device_type: str,
                  cert_file: str = "certificate.pem.crt",
                  key_file: str = "private.pem.key",
-                 api_url: str = DEFAULT_API_URL):
+                 api_url: str = DEFAULT_API_URL,
+                 timeout: int = 30):
         self.customer_id = customer_id
         self.device_type = device_type
         self.cert_file = cert_file
         self.key_file = key_file
         self.api_url = api_url.rstrip('/')
+        self.timeout = timeout
         self._temp_cert_file: Optional[str] = None
         self._temp_key_file: Optional[str] = None
 
@@ -74,7 +76,7 @@ class AxfUploadClient:
             url,
             json=payload,
             cert=(self.cert_file, self.key_file),
-            timeout=30,
+            timeout=self.timeout,
         )
 
         if response.status_code != 200:
@@ -172,6 +174,8 @@ def main():
                         help='AXF file to upload')
     parser.add_argument('--api_url', type=str, default=DEFAULT_API_URL,
                         help=f'Upload API base URL (default: {DEFAULT_API_URL})')
+    parser.add_argument('--timeout', type=int, default=60,
+                        help='Request timeout in seconds (default: 60)')
 
     args = parser.parse_args()
 
@@ -217,6 +221,7 @@ def main():
             cert_file=cert_path,
             key_file=key_path,
             api_url=args.api_url,
+            timeout=args.timeout,
         )
         client.application_id = application_id
         client._temp_cert_file = temp_cert_file
