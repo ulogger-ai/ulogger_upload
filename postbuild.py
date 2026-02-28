@@ -95,11 +95,15 @@ class AxfUploadClient:
     def _upload_file_to_s3(file_path: str, presigned_url: str) -> bool:
         """Upload a file to S3 using a presigned PUT URL."""
         logger.info(f"Uploading {file_path} to S3")
+        file_size = os.path.getsize(file_path)
         with open(file_path, 'rb') as f:
             response = requests.put(
                 presigned_url,
                 data=f,
-                headers={'Content-Type': 'application/octet-stream'},
+                headers={
+                    'Content-Type': 'application/octet-stream',
+                    'Content-Length': str(file_size),
+                },
                 timeout=300,
             )
 
